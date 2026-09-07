@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KNUH Derma">
+  <title>경북대병원 피부과 처방 계산기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased select-none">
+
+  <!-- TOP HEADER -->
+  <header class="bg-blue-700 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="bg-white/20 p-1.5 rounded-lg">
+          <i data-lucide="stethoscope" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-tight leading-none">경북대병원 피부과</h1>
+          <p class="text-[11px] text-blue-100 mt-0.5">Clinical Prescription Guide</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-1.5">
+        <button onclick="openExternalSearchModal()" class="flex items-center space-x-1 text-xs bg-white/15 hover:bg-white/25 active:scale-95 px-2.5 py-1.5 rounded-lg font-semibold transition border border-white/20">
+          <i data-lucide="search" class="w-3.5 h-3.5"></i>
+          <span>약학정보 검색</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PROGRESS STEPPER BAR -->
+    <div id="stepper-bar" class="bg-blue-800/60 border-t border-blue-600/50 px-4 py-2 text-xs hidden">
+      <div class="max-w-xl mx-auto flex items-center justify-between font-medium">
+        <div id="step-nav-1" onclick="goToStep(1)" class="flex items-center space-x-1.5 cursor-pointer text-blue-200 hover:text-white">
+          <span class="w-5 h-5 rounded-full bg-blue-600 border border-blue-300 flex items-center justify-center text-[10px] font-bold">1</span>
+          <span>환자군 선택</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-blue-300"></i>
+        <div id="step-nav-2" onclick="goToStep(2)" class="flex items-center space-x-1.5 cursor-pointer text-white font-bold">
+          <span class="w-5 h-5 rounded-full bg-white text-blue-800 flex items-center justify-center text-[10px] font-black">2</span>
+          <span>파라미터/약제</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-blue-400"></i>
+        <div id="step-nav-3" class="flex items-center space-x-1.5 text-blue-300">
+          <span class="w-5 h-5 rounded-full bg-blue-900/80 border border-blue-400/40 flex items-center justify-center text-[10px]">3</span>
+          <span>처방 가이드</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-xl w-full mx-auto p-4 flex flex-col justify-start">
+
+    <!-- DEPTH 1: 환자 군 선택 (Step 1) -->
+    <div id="screen-step1" class="space-y-4 my-auto py-4">
+      <div class="text-center space-y-1.5 mb-6">
+        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full border border-blue-200">Clinical Mode</span>
+        <h2 class="text-2xl font-black text-slate-800 tracking-tight">처방 대상 환자를 선택하세요</h2>
+        <p class="text-xs text-slate-500">소아 제형 환산 또는 성인 장기기능 감량 지침</p>
+      </div>
+
+      <!-- 소아 선택 카드 -->
+      <button onclick="selectPatientType('pediatric')" class="w-full text-left bg-white p-5 rounded-2xl border-2 border-slate-200 hover:border-blue-500 shadow-sm active:scale-[0.99] transition-all group flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <i data-lucide="baby" class="w-8 h-8"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-blue-600">소아 환자 처방</h3>
+              <span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">Pediatric</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">두드리진, 페디솔, 바난 등 체중(kg) 기반 시럽(mL)/정제 자동 환산</p>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 group-hover:text-blue-600 shrink-0"></i>
+      </button>
+
+      <!-- 성인 신/간기능 선택 카드 -->
+      <button onclick="selectPatientType('adult')" class="w-full text-left bg-white p-5 rounded-2xl border-2 border-slate-200 hover:border-blue-500 shadow-sm active:scale-[0.99] transition-all group flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <i data-lucide="activity" class="w-8 h-8"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-blue-600">성인 &middot; 장기기능 저하</h3>
+              <span class="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">Renal / Hepatic</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">eGFR &middot; Child-Pugh에 따른 항히스타민, MTX, 사이폴엔, JAK 감량 지침</p>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 group-hover:text-blue-600 shrink-0"></i>
+      </button>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-6 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="book-open" class="w-4 h-4 text-blue-600"></i>
+          <span class="text-xs font-semibold text-slate-700">약학정보원 &middot; DUR 실시간 백과</span>
+        </div>
+        <button onclick="openExternalSearchModal()" class="text-xs text-blue-600 font-bold hover:underline flex items-center space-x-0.5">
+          <span>다이렉트 검색</span>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- DEPTH 2: 세부 파라미터 및 약제 선택 (Step 2) -->
+    <div id="screen-step2" class="space-y-4 hidden flex-1 flex flex-col">
+      <div class="flex items-center justify-between">
+        <button onclick="goToStep(1)" class="flex items-center space-x-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 active:scale-95 transition">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>환자군 재선택</span>
+        </button>
+        <span id="step2-badge" class="text-xs font-extrabold px-2.5 py-1 rounded-full"></span>
+      </div>
+
+      <!-- 2-A. 소아 파라미터 박스 (체중, 나이, 제형 실시간 필터) -->
+      <div id="pediatric-params-box" class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span>소아 환자 정보 입력</span>
+          </span>
+          <span class="text-[11px] text-slate-400">체중을 기준으로 정밀 계산됩니다</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-600">환자 체중 (Weight)</label>
+            <div class="relative">
+              <input type="number" id="input-weight" value="12" step="0.5" min="1" max="100" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 text-base font-extrabold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition">
+              <span class="absolute right-3 top-2.5 text-xs font-bold text-slate-400">kg</span>
+            </div>
+            <div class="flex space-x-1 pt-0.5">
+              <button onclick="adjustWeight(-1)" class="flex-1 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 rounded text-slate-600 active:scale-95">-1kg</button>
+              <button onclick="adjustWeight(+1)" class="flex-1 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 rounded text-slate-600 active:scale-95">+1kg</button>
+              <button onclick="adjustWeight(+5)" class="flex-1 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 rounded text-slate-600 active:scale-95">+5kg</button>
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-600">환자 나이 (Age)</label>
+            <div class="relative">
+              <input type="number" id="input-age" value="2" min="0" max="18" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 text-base font-extrabold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition">
+              <span class="absolute right-3 top-2.5 text-xs font-bold text-slate-400">세</span>
+            </div>
+            <div class="flex space-x-1 pt-0.5">
+              <button onclick="adjustAge(-1)" class="flex-1 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 rounded text-slate-600 active:scale-95">-1세</button>
+              <button onclick="adjustAge(+1)" class="flex-1 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 rounded text-slate-600 active:scale-95">+1세</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 핵심: 제형 필터 세그먼트 버튼 -->
+        <div class="pt-1 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-[11px] font-bold text-slate-700 flex items-center space-x-1">
+              <i data-lucide="filter" class="w-3 h-3 text-blue-600"></i>
+              <span>제형 필터링 (Formulation)</span>
+            </label>
+            <span id="form-filter-desc" class="text-[10px] text-blue-600 font-semibold">모든 제형 표시 중</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl">
+            <button type="button" id="form-btn-all" onclick="setFormFilter('all')" class="py-1.5 text-xs font-extrabold rounded-lg transition bg-white text-blue-700 shadow-xs">
+              전체
+            </button>
+            <button type="button" id="form-btn-syrup" onclick="setFormFilter('syrup')" class="py-1.5 text-xs font-extrabold rounded-lg transition text-slate-600 hover:text-slate-900">
+              시럽제 (mL)
+            </button>
+            <button type="button" id="form-btn-tablet" onclick="setFormFilter('tablet')" class="py-1.5 text-xs font-extrabold rounded-lg transition text-slate-600 hover:text-slate-900">
+              정제 (T)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-B. 성인 장기기능 파라미터 박스 -->
+      <div id="adult-params-box" class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3 hidden">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span>신기능 &middot; 간기능 파라미터 선택</span>
+          </span>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">신기능 (eGFR / CrCl 기준)</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <button type="button" onclick="setRenalFilter('normal', this)" class="renal-btn py-2 px-1.5 text-center text-xs font-bold rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700">
+                정상/경미<br><span class="text-[10px] font-normal">&ge;50 mL/min</span>
+              </button>
+              <button type="button" onclick="setRenalFilter('moderate', this)" class="renal-btn py-2 px-1.5 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700">
+                중등도 저하<br><span class="text-[10px] font-normal">30~49 mL/min</span>
+              </button>
+              <button type="button" onclick="setRenalFilter('severe', this)" class="renal-btn py-2 px-1.5 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700">
+                중증 저하<br><span class="text-[10px] font-normal">10~29 mL/min</span>
+              </button>
+              <button type="button" onclick="setRenalFilter('esrd', this)" class="renal-btn py-2 px-1.5 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700">
+                말기/투석<br><span class="text-[10px] font-normal">&lt;10 mL/min</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">간기능 (Child-Pugh Class)</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="setHepaticFilter('normal', this)" class="hepatic-btn py-2 px-2 text-center text-xs font-bold rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700">
+                정상 (Normal)
+              </button>
+              <button type="button" onclick="setHepaticFilter('mild-mod', this)" class="hepatic-btn py-2 px-2 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700">
+                경도~중등도 (A/B)
+              </button>
+              <button type="button" onclick="setHepaticFilter('severe', this)" class="hepatic-btn py-2 px-2 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700">
+                중증 비대상성 (C)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-C. 약제 실시간 검색 및 카드 리스트 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3 flex-1 flex flex-col">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input type="text" id="drug-search-input" placeholder="약제명 검색 (예: 두드리진, 유시락스, 바난, 소론도...)" class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" oninput="filterDrugList()">
+          <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="flex space-x-1.5 overflow-x-auto no-scrollbar pb-1 text-xs" id="category-tabs"></div>
+
+        <div id="drug-card-list" class="space-y-2 overflow-y-auto max-h-[290px] pr-1 flex-1"></div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+          <span id="drug-count-badge" class="font-bold text-slate-600"></span>
+          <button onclick="openExternalSearchModal()" class="text-blue-600 font-bold hover:underline flex items-center space-x-1">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>약학정보원 원문 검색</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2 safe-bottom">
+        <button id="btn-to-step3" onclick="goToStep(3)" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-extrabold py-3.5 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 transition">
+          <span>처방 가이드 및 용량 확인</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- DEPTH 3: 최종 처방 가이드 (Step 3) -->
+    <div id="screen-step3" class="space-y-4 hidden flex-1 flex flex-col">
+      <div class="flex items-center justify-between">
+        <button onclick="goToStep(2)" class="flex items-center space-x-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 active:scale-95 transition">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>수정하기 (Step 2)</span>
+        </button>
+        <div class="flex items-center space-x-1.5" id="step3-external-links"></div>
+      </div>
+
+      <div id="step3-content" class="space-y-3 flex-1 overflow-y-auto pr-1"></div>
+
+      <div class="space-y-2 pt-2 safe-bottom">
+        <button onclick="copyEmrText()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-2 transition">
+          <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+          <span>원내 EMR 차팅 문구 복사</span>
+        </button>
+        <button onclick="goToStep(1)" class="w-full bg-slate-200 hover:bg-slate-300 active:scale-[0.99] text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>처음으로 (새 환자 진료)</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- EXTERNAL DRUG SEARCH MODAL -->
+  <div id="external-search-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col">
+      <div class="bg-slate-800 text-white px-5 py-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="book-open" class="w-5 h-5"></i>
+          <h3 class="font-bold text-sm">약학정보원 &middot; DUR 실시간 검색</h3>
+        </div>
+        <button onclick="closeExternalSearchModal()" class="text-white/80 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-4 text-xs">
+        <p class="text-slate-600 leading-relaxed">
+          검색어를 입력하시면 약학정보원(KPIC) 제휴 공식 백과 및 식약처 허가정보 페이지가 새 창으로 즉시 열립니다.
+        </p>
+        <div class="relative">
+          <input type="text" id="ext-search-query" placeholder="약품명 또는 성분명 입력 (예: 두드리진, 유시락스, 바난...)" class="w-full p-2.5 border-2 border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:border-blue-600">
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="executeExternalSearch('kpic')" class="flex items-center justify-center space-x-1.5 p-3 rounded-xl font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 active:scale-95 transition">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            <span>약학정보원 공식 백과</span>
+          </button>
+          <button onclick="executeExternalSearch('nedrug')" class="flex items-center justify-center space-x-1.5 p-3 rounded-xl font-bold bg-indigo-50 text-indigo-800 border border-indigo-300 hover:bg-indigo-100 active:scale-95 transition">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+            <span>식약처 DUR 허가정보</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2 transition-all opacity-0 pointer-events-none translate-y-2">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    // 소아 피부과 다빈도 약제 데이터베이스
+    const PEDIATRIC_DRUGS = [
+      // 1. 항히스타민제
+      {
+        id: "p_doodlerijin",
+        name: "두드리진시럽 (히드록시진염산염 2mg/mL)",
+        category: "antihistamine",
+        doseRange: "1 ~ 2 mg/kg/day",
+        defaultDose: 1.0,
+        divide: 3,
+        syrupConc: 2.0, // 2mg/mL
+        tabletStrength: 10,
+        maxDoseDay: 50,
+        unit: "mg",
+        precautions: "유시락스 동일 성분. 진정 작용이 우수하여 야간 소양증 조절에 효과적. 취침 전 분복 비중을 높여 투여 가능.",
+        searchKey: "두드리진"
+      },
+      {
+        id: "p_ucerax",
+        name: "유시락스시럽 (히드록시진염산염 2mg/mL)",
+        category: "antihistamine",
+        doseRange: "1 ~ 2 mg/kg/day",
+        defaultDose: 1.0,
+        divide: 3,
+        syrupConc: 2.0,
+        tabletStrength: 10,
+        maxDoseDay: 50,
+        unit: "mg",
+        precautions: "1세대 항히스타민제. 진정/항콜린 부작용 모니터링.",
+        searchKey: "유시락스"
+      },
+      {
+        id: "p_xyzal",
+        name: "씨잘액 (레보세티리진 0.5mg/mL)",
+        category: "antihistamine",
+        doseType: "fixed_age",
+        rules: [
+          { maxAge: 2, note: "2세 미만 안전성 미확립 (신중 투여)" },
+          { minAge: 2, maxAge: 6, dose: 1.25, freq: "1일 1회 (저녁)", syrupMl: 2.5 },
+          { minAge: 6, maxAge: 12, dose: 2.5, freq: "1일 1회 (저녁)", syrupMl: 5.0 },
+          { minAge: 12, maxAge: 99, dose: 5.0, freq: "1일 1회 (저녁)", syrupMl: 10.0 }
+        ],
+        syrupConc: 0.5,
+        tabletStrength: 5,
+        unit: "mg",
+        precautions: "2세대 항히스타민제. 연령대별 고정 용량 투여 원칙.",
+        searchKey: "씨잘액"
+      },
+      {
+        id: "p_zyrtec",
+        name: "지르텍액 (세티리진 1mg/mL)",
+        category: "antihistamine",
+        doseType: "fixed_age",
+        rules: [
+          { maxAge: 2, note: "2세 미만 투여 권장되지 않음" },
+          { minAge: 2, maxAge: 6, dose: 2.5, freq: "1일 1~2회 (총 5mg/일)", syrupMl: 2.5 },
+          { minAge: 6, maxAge: 99, dose: 10.0, freq: "1일 1회 (취침 전)", syrupMl: 10.0 }
+        ],
+        syrupConc: 1.0,
+        tabletStrength: 10,
+        unit: "mg",
+        precautions: "신속한 소양증 완화. 신장 배설 약물.",
+        searchKey: "지르텍액"
+      },
+      {
+        id: "p_claritin",
+        name: "클라리틴시럽 (로라타딘 1mg/mL)",
+        category: "antihistamine",
+        doseType: "fixed_age",
+        rules: [
+          { maxAge: 2, note: "2세 미만 투여 권장되지 않음" },
+          { minAge: 2, maxAge: 12, dose: 5.0, freq: "1일 1회 (체중 30kg 미만 5mg, 이상 10mg)", syrupMl: 5.0 },
+          { minAge: 12, maxAge: 99, dose: 10.0, freq: "1일 1회", syrupMl: 10.0 }
+        ],
+        syrupConc: 1.0,
+        tabletStrength: 10,
+        unit: "mg",
+        precautions: "진정 작용이 가장 적은 2세대 항히스타민제.",
+        searchKey: "클라리틴"
+      },
+      {
+        id: "p_aerius",
+        name: "에리우스시럽 (데스로라타딘 0.5mg/mL)",
+        category: "antihistamine",
+        doseType: "fixed_age",
+        rules: [
+          { maxAge: 1, note: "1세 미만 안전성 미확립" },
+          { minAge: 1, maxAge: 6, dose: 1.25, freq: "1일 1회", syrupMl: 2.5 },
+          { minAge: 6, maxAge: 12, dose: 2.5, freq: "1일 1회", syrupMl: 5.0 },
+          { minAge: 12, maxAge: 99, dose: 5.0, freq: "1일 1회", syrupMl: 10.0 }
+        ],
+        syrupConc: 0.5,
+        tabletStrength: 5,
+        unit: "mg",
+        precautions: "긴 반감기로 24시간 증상 조절에 용이.",
+        searchKey: "에리우스"
+      },
+      {
+        id: "p_zaditen",
+        name: "자디텐시럽 (케토티펜 0.2mg/mL)",
+        category: "antihistamine",
+        doseRange: "0.05 ~ 0.1 mg/kg/day",
+        defaultDose: 0.05,
+        divide: 2,
+        syrupConc: 0.2,
+        tabletStrength: 1,
+        maxDoseDay: 2,
+        unit: "mg",
+        precautions: "비만세포 안정화 효과 겸비. 아토피 피부염 소양증에 지속 투여 고려.",
+        searchKey: "자디텐"
+      },
+      {
+        id: "p_alelock",
+        name: "알레락정 (올로파타딘 2.5mg / 5mg)",
+        category: "antihistamine",
+        doseType: "fixed_age",
+        rules: [
+          { maxAge: 7, note: "7세 미만 소아 안전성 미확립" },
+          { minAge: 7, maxAge: 12, dose: 2.5, freq: "1일 2회 (아침/저녁, 회당 2.5mg)", syrupMl: null },
+          { minAge: 12, maxAge: 99, dose: 5.0, freq: "1일 2회 (아침/저녁, 회당 5mg)", syrupMl: null }
+        ],
+        syrupConc: null, // 시럽 제형 없음 (정제 전용)
+        tabletStrength: 2.5,
+        unit: "mg",
+        precautions: "소아 소양증에 매우 우수한 항히스타민 정제. 7세 이상에서 승인.",
+        searchKey: "알레락"
+      },
+
+      // 2. 경구 스테로이드
+      {
+        id: "p_pedisol",
+        name: "페디솔시럽 (프레드니솔론 1mg/mL)",
+        category: "steroid",
+        doseRange: "0.5 ~ 1.0 (중증 2.0) mg/kg/day",
+        defaultDose: 0.5,
+        divide: 2,
+        syrupConc: 1.0,
+        tabletStrength: 5,
+        maxDoseDay: 60,
+        unit: "mg",
+        precautions: "급성 악화기 3~5일 단기 요법 원칙. 위장관 보호를 위해 식후 즉시 투여.",
+        searchKey: "페디솔"
+      },
+      {
+        id: "p_solondo",
+        name: "소론도정 (프레드니솔론 5mg)",
+        category: "steroid",
+        doseRange: "0.5 ~ 1.0 (중증 2.0) mg/kg/day",
+        defaultDose: 0.5,
+        divide: 2,
+        syrupConc: null, // 정제 전용
+        tabletStrength: 5,
+        maxDoseDay: 60,
+        unit: "mg",
+        precautions: "정제 복용 가능한 소아에서 용량 분할 투여.",
+        searchKey: "소론도"
+      },
+      {
+        id: "p_calcort",
+        name: "캘코트정 (데플라자코트 6mg)",
+        category: "steroid",
+        doseRange: "0.25 ~ 1.5 mg/kg/day",
+        defaultDose: 0.5,
+        divide: 2,
+        syrupConc: null, // 정제 전용
+        tabletStrength: 6,
+        maxDoseDay: 36,
+        unit: "mg",
+        precautions: "소아 골성장 저해 및 체중 증가 부작용이 비교적 적은 스테로이드 제제.",
+        searchKey: "캘코트"
+      },
+
+      // 3. 경구 항생제
+      {
+        id: "p_cefaclor",
+        name: "세파클러 건조시럽 (125mg/5mL = 25mg/mL)",
+        category: "antibiotics",
+        doseRange: "20 ~ 40 mg/kg/day",
+        defaultDose: 30,
+        divide: 3,
+        syrupConc: 25.0,
+        tabletStrength: 250,
+        maxDoseDay: 1000,
+        unit: "mg",
+        precautions: "농가진, 봉와직염 등 피부 연조직 감염 1차 선택 2세대 세파. 혈청병양 반응 관찰.",
+        searchKey: "세파클러"
+      },
+      {
+        id: "p_augmentin",
+        name: "오구멘틴듀오 시럽 (Amox/Clav 228.5mg/5mL)",
+        category: "antibiotics",
+        doseRange: "25 ~ 45 mg/kg/day (Amox 기준)",
+        defaultDose: 30,
+        divide: 2,
+        syrupConc: 40.0,
+        tabletStrength: 375,
+        maxDoseDay: 2000,
+        unit: "mg",
+        precautions: "2차 감염 동반 아토피에 효과적. 설사 방지를 위해 식사 시작 시 복용.",
+        searchKey: "오구멘틴"
+      },
+      {
+        id: "p_banan",
+        name: "바난 건조시럽 (세프포독심 50mg/5mL = 10mg/mL)",
+        category: "antibiotics",
+        doseRange: "6 ~ 10 mg/kg/day",
+        defaultDose: 8,
+        divide: 2,
+        syrupConc: 10.0,
+        tabletStrength: 100,
+        maxDoseDay: 400,
+        unit: "mg",
+        precautions: "3세대 세파. 피부 연조직 감염 및 1/2세대 세파 저항성 의심 시 고려.",
+        searchKey: "바난"
+      },
+      {
+        id: "p_meiact",
+        name: "메이액트 소아용 소립 (세프디토렌 100mg/g)",
+        category: "antibiotics",
+        doseRange: "9 ~ 12 mg/kg/day",
+        defaultDose: 9,
+        divide: 3,
+        syrupConc: 100.0,
+        tabletStrength: 100,
+        maxDoseDay: 600,
+        unit: "mg",
+        precautions: "피부 포도상구균 및 화농성 감염에 우수한 감수성을 보이는 3세대 경구 세파.",
+        searchKey: "메이액트"
+      },
+
+      // 4. 경구 항진균제
+      {
+        id: "p_diflucan",
+        name: "디푸루칸 건조시럽 (플루코나졸 50mg/5mL = 10mg/mL)",
+        category: "antifungal",
+        doseRange: "3 ~ 6 mg/kg/day",
+        defaultDose: 3,
+        divide: 1,
+        syrupConc: 10.0,
+        tabletStrength: 50,
+        maxDoseDay: 400,
+        unit: "mg",
+        precautions: "소아 칸디다증, 두부백선 2차 약제. 1일 1회 투여.",
+        searchKey: "디푸루칸"
+      },
+      {
+        id: "p_sporanox",
+        name: "스포라녹스액 (이트라코나졸 10mg/mL)",
+        category: "antifungal",
+        doseRange: "3 ~ 5 mg/kg/day",
+        defaultDose: 5,
+        divide: 1,
+        syrupConc: 10.0,
+        tabletStrength: 100,
+        maxDoseDay: 200,
+        unit: "mg",
+        precautions: "소아 두부백선/진균감염. 공복에 투여해야 흡수율이 증가함.",
+        searchKey: "스포라녹스"
+      }
+    ];
+
+    // 성인 및 신장/간기능 감량 약제 데이터베이스
+    const ADULT_DRUGS = [
+      {
+        id: "a_levo",
+        name: "Levocetirizine (씨잘 5mg)",
+        category: "antihistamine",
+        searchKey: "씨잘",
+        renalGuide: {
+          normal: "5mg 1일 1회 (정상 투여)",
+          moderate: "5mg 2일 1회 (48시간마다 1회)",
+          severe: "5mg 3일 1회 (72시간마다 1회)",
+          esrd: "투여 금기 (혈액투석으로 제거되지 않음)"
+        },
+        hepaticGuide: {
+          normal: "용량 조절 불필요",
+          "mild-mod": "조절 불필요 (신장 배설 주경로)",
+          severe: "신기능 정상 시 사용 가능하나 모니터링"
+        },
+        pearls: "신배설 85% 이상으로 eGFR 감소 시 투여 간격을 엄격히 연장해야 합니다."
+      },
+      {
+        id: "a_fexo",
+        name: "Fexofenadine (알레그라 120mg / 180mg)",
+        category: "antihistamine",
+        searchKey: "알레그라",
+        renalGuide: {
+          normal: "120~180mg 1일 1회",
+          moderate: "60mg 1일 1회 감량 권장",
+          severe: "60mg 1일 1회 감량",
+          esrd: "60mg 1일 1회 (투석으로 제거 안 됨)"
+        },
+        hepaticGuide: {
+          normal: "정상 투여",
+          "mild-mod": "간 대사를 거치지 않아 매우 안전함 (용량 조절 불필요)",
+          severe: "간경변 등 간기능 저하 환자에서 1차 선택 항히스타민제"
+        },
+        pearls: "간대사 의존도가 5% 미만으로 간질환자의 만성 소양증에 가장 안전하게 추천됩니다."
+      },
+      {
+        id: "a_bepotastine",
+        name: "Bepotastine (타리온정 10mg)",
+        category: "antihistamine",
+        searchKey: "타리온",
+        renalGuide: {
+          normal: "10mg 1일 2회",
+          moderate: "10mg 1일 1회 감량 고려",
+          severe: "10mg 1일 1회 신중 투여",
+          esrd: "신중 투여"
+        },
+        hepaticGuide: {
+          normal: "정상 투여",
+          "mild-mod": "정상 투여 가능",
+          severe: "정상 투여 가능"
+        },
+        pearls: "신속한 약효 발현으로 두드러기 급성 악화에 우수."
+      },
+      {
+        id: "a_mtx",
+        name: "Methotrexate (MTX 2.5mg)",
+        category: "immunosuppressant",
+        searchKey: "메토트렉세이트",
+        renalGuide: {
+          normal: "7.5 ~ 15 mg 주 1회 복용 (엽산 5mg 병용)",
+          moderate: "50% 감량 투여 또는 투여 보류",
+          severe: "투여 금기 (치명적 범혈구감소증 위험)",
+          esrd: "절대 금기 (Absolute Contraindication)"
+        },
+        hepaticGuide: {
+          normal: "기저 LFT 정상 확인 후 투여",
+          "mild-mod": "AST/ALT > 2x ULN 시 보류, 지방간 신중",
+          severe: "절대 금기 (간경변증 환자 금기)"
+        },
+        pearls: "신장 배설 80% 이상으로 신기능 저하 시 약물 축적으로 인한 급성 골수 억제 유발. 처방 시 CBC/Cr 추적 필수."
+      },
+      {
+        id: "a_csa",
+        name: "Cyclosporine (사이폴엔 25mg / 100mg)",
+        category: "immunosuppressant",
+        searchKey: "사이폴엔",
+        renalGuide: {
+          normal: "2.5 ~ 5.0 mg/kg/day 1일 2회 분복",
+          moderate: "신기능 저하자 투여 신중. 기저 Cr 대비 30% 상승 시 즉시 25~50% 감량",
+          severe: "투여 금기 (자체 신혈관 수축 신독성 유발)",
+          esrd: "절대 금기"
+        },
+        hepaticGuide: {
+          normal: "정상 투여",
+          "mild-mod": "CYP3A4 대사 의존으로 혈중 농도(C0) 추적 필수",
+          severe: "대사 저하로 인한 약물 축적. 투여 회피"
+        },
+        pearls: "자체 신독성이 강하므로 투여 전 기저 Serum Cr 확인 및 혈압 측정이 원칙입니다."
+      },
+      {
+        id: "a_alitretinoin",
+        name: "Alitretinoin (알리톡 10mg / 30mg)",
+        category: "retinoid",
+        searchKey: "알리톡",
+        renalGuide: {
+          normal: "10~30mg 1일 1회 식후 복용",
+          moderate: "10mg 1일 1회 신중 투여",
+          severe: "투여 금기",
+          esrd: "투여 금기"
+        },
+        hepaticGuide: {
+          normal: "기저 LFT 정상 확인",
+          "mild-mod": "투여 금기",
+          severe: "투여 금기"
+        },
+        pearls: "만성 수부습진 치료제. 가임기 여성 절대 금기(기형 유발), 중증 신장/간장애 환자 금기."
+      },
+      {
+        id: "a_baricitinib",
+        name: "Baricitinib (올루미언트 2mg / 4mg)",
+        category: "jak",
+        searchKey: "올루미언트",
+        renalGuide: {
+          normal: "4mg 1일 1회 (아토피 피부염)",
+          moderate: "eGFR 30~60: 2mg 1일 1회로 50% 감량",
+          severe: "eGFR <30: 투여 권장되지 않음 (금기)",
+          esrd: "투여 금기"
+        },
+        hepaticGuide: {
+          normal: "정상 투여",
+          "mild-mod": "용량 조절 불필요",
+          severe: "투여 금기"
+        },
+        pearls: "신배설 의존형 JAK 억제제로 신기능 저하시 정확한 2mg 감량이 필요합니다."
+      }
+    ];
+
+    // 상태 변수
+    let currentStep = 1;
+    let patientType = 'pediatric';
+    let selectedDrugId = null;
+    let currentCategory = 'all';
+    let currentFormFilter = 'all'; // 'all', 'syrup', 'tablet'
+    let searchQuery = '';
+    let adultRenalStatus = 'normal';
+    let adultHepaticStatus = 'normal';
+    let lastGeneratedEmrText = '';
+
+    // 제형 판별 헬퍼 함수
+    function hasSyrupForm(drug) {
+      if (drug.syrupConc !== null && drug.syrupConc !== undefined) return true;
+      if (drug.doseType === 'fixed_age' && drug.rules) {
+        return drug.rules.some(r => r.syrupMl !== null && r.syrupMl !== undefined);
+      }
+      return false;
+    }
+
+    function hasTabletForm(drug) {
+      return drug.tabletStrength !== null && drug.tabletStrength !== undefined;
+    }
+
+    // 제형 필터 설정
+    function setFormFilter(formType) {
+      currentFormFilter = formType;
+      const bAll = document.getElementById('form-btn-all');
+      const bSyrup = document.getElementById('form-btn-syrup');
+      const bTab = document.getElementById('form-btn-tablet');
+      const desc = document.getElementById('form-filter-desc');
+
+      // 스타일 초기화
+      const inactive = "py-1.5 text-xs font-extrabold rounded-lg transition text-slate-600 hover:text-slate-900";
+      bAll.className = inactive;
+      bSyrup.className = inactive;
+      bTab.className = inactive;
+
+      if (formType === 'all') {
+        bAll.className = "py-1.5 text-xs font-extrabold rounded-lg transition bg-white text-blue-700 shadow-xs";
+        desc.innerText = "모든 제형 표시 중";
+      } else if (formType === 'syrup') {
+        bSyrup.className = "py-1.5 text-xs font-extrabold rounded-lg transition bg-amber-500 text-white shadow-xs";
+        desc.innerText = "시럽제(mL) 조제 가능 약제만 표시";
+      } else if (formType === 'tablet') {
+        bTab.className = "py-1.5 text-xs font-extrabold rounded-lg transition bg-blue-600 text-white shadow-xs";
+        desc.innerText = "정제(T) 조제 가능 약제만 표시";
+      }
+
+      renderDrugCardList();
+    }
+
+    // Step 이동
+    function goToStep(step) {
+      currentStep = step;
+      const s1 = document.getElementById('screen-step1');
+      const s2 = document.getElementById('screen-step2');
+      const s3 = document.getElementById('screen-step3');
+      const stepperBar = document.getElementById('stepper-bar');
+
+      s1.classList.add('hidden');
+      s2.classList.add('hidden');
+      s3.classList.add('hidden');
+
+      if (step === 1) {
+        s1.classList.remove('hidden');
+        stepperBar.classList.add('hidden');
+      } else if (step === 2) {
+        s2.classList.remove('hidden');
+        stepperBar.classList.remove('hidden');
+        updateStep2View();
+      } else if (step === 3) {
+        s3.classList.remove('hidden');
+        stepperBar.classList.remove('hidden');
+        renderStep3Prescription();
+      }
+
+      updateStepperUI(step);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function updateStepperUI(step) {
+      const n1 = document.getElementById('step-nav-1');
+      const n2 = document.getElementById('step-nav-2');
+      const n3 = document.getElementById('step-nav-3');
+
+      if (step === 2) {
+        n1.className = "flex items-center space-x-1.5 cursor-pointer text-blue-200 hover:text-white";
+        n2.className = "flex items-center space-x-1.5 text-white font-bold";
+        n3.className = "flex items-center space-x-1.5 text-blue-300";
+      } else if (step === 3) {
+        n1.className = "flex items-center space-x-1.5 cursor-pointer text-blue-200 hover:text-white";
+        n2.className = "flex items-center space-x-1.5 cursor-pointer text-blue-200 hover:text-white";
+        n3.className = "flex items-center space-x-1.5 text-white font-black";
+      }
+    }
+
+    function selectPatientType(type) {
+      patientType = type;
+      const all = (type === 'pediatric') ? PEDIATRIC_DRUGS : ADULT_DRUGS;
+      selectedDrugId = all[0].id;
+      currentCategory = 'all';
+      currentFormFilter = 'all';
+      searchQuery = '';
+      document.getElementById('drug-search-input').value = '';
+      goToStep(2);
+    }
+
+    function updateStep2View() {
+      const pBox = document.getElementById('pediatric-params-box');
+      const aBox = document.getElementById('adult-params-box');
+      const badge = document.getElementById('step2-badge');
+
+      if (patientType === 'pediatric') {
+        pBox.classList.remove('hidden');
+        aBox.classList.add('hidden');
+        badge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200";
+        badge.innerText = "소아 환자 모드";
+        setFormFilter(currentFormFilter);
+      } else {
+        pBox.classList.add('hidden');
+        aBox.classList.remove('hidden');
+        badge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200";
+        badge.innerText = "성인 장기기능 모드";
+      }
+
+      renderCategoryTabs();
+      renderDrugCardList();
+    }
+
+    function renderCategoryTabs() {
+      const container = document.getElementById('category-tabs');
+      let tabs = [{ id: 'all', label: '전체' }, { id: 'antihistamine', label: '항히스타민' }];
+
+      if (patientType === 'pediatric') {
+        tabs.push({ id: 'steroid', label: '스테로이드' });
+        tabs.push({ id: 'antibiotics', label: '항생제' });
+        tabs.push({ id: 'antifungal', label: '항진균제' });
+      } else {
+        tabs.push({ id: 'immunosuppressant', label: '면역조절제' });
+        tabs.push({ id: 'retinoid', label: '레티노이드' });
+        tabs.push({ id: 'jak', label: 'JAK억제제' });
+      }
+
+      container.innerHTML = tabs.map(t => `
+        <button onclick="setCategory('${t.id}')" class="px-3 py-1.5 rounded-lg whitespace-nowrap font-bold text-xs transition ${currentCategory === t.id ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+          ${t.label}
+        </button>
+      `).join('');
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      renderCategoryTabs();
+      renderDrugCardList();
+    }
+
+    function filterDrugList() {
+      const val = document.getElementById('drug-search-input').value.trim();
+      searchQuery = val.toLowerCase();
+      document.getElementById('clear-search-btn').classList.toggle('hidden', val.length === 0);
+      renderDrugCardList();
+    }
+
+    function clearSearch() {
+      document.getElementById('drug-search-input').value = '';
+      searchQuery = '';
+      document.getElementById('clear-search-btn').classList.add('hidden');
+      renderDrugCardList();
+    }
+
+    // 제형 및 검색어 필터링 핵심 엔진
+    function renderDrugCardList() {
+      const container = document.getElementById('drug-card-list');
+      const allDrugs = (patientType === 'pediatric') ? PEDIATRIC_DRUGS : ADULT_DRUGS;
+
+      const filtered = allDrugs.filter(d => {
+        // 1. 카테고리 필터
+        const matchesCat = (currentCategory === 'all') || (d.category === currentCategory);
+        
+        // 2. 검색어 필터
+        const matchesSearch = !searchQuery || 
+                              d.name.toLowerCase().includes(searchQuery) || 
+                              d.searchKey.toLowerCase().includes(searchQuery);
+
+        // 3. 제형 필터 (소아 모드인 경우)
+        let matchesForm = true;
+        if (patientType === 'pediatric') {
+          if (currentFormFilter === 'syrup') {
+            matchesForm = hasSyrupForm(d);
+          } else if (currentFormFilter === 'tablet') {
+            matchesForm = hasTabletForm(d);
+          }
+        }
+
+        return matchesCat && matchesSearch && matchesForm;
+      });
+
+      const filterTagDesc = currentFormFilter === 'syrup' ? ' [시럽제]' : (currentFormFilter === 'tablet' ? ' [정제]' : '');
+      document.getElementById('drug-count-badge').innerText = `총 ${filtered.length}개 약제 노출 중${filterTagDesc}`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 text-xs">
+            <i data-lucide="package-x" class="w-8 h-8 mx-auto mb-1 opacity-40"></i>
+            <p class="font-bold text-slate-600">선택하신 조건에 해당하는 약제가 없습니다.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">제형 필터(시럽/정제)를 [전체]로 변경하거나 검색어를 확인해보세요.</p>
+            <button onclick="setFormFilter('all')" class="mt-2 text-xs font-bold text-blue-600 hover:underline">
+              제형 필터 전체 해제 &rarr;
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // 현재 선택된 약제가 필터링 결과에 없다면 첫 번째 항목을 자동 선택
+      if (!filtered.some(d => d.id === selectedDrugId) && filtered.length > 0) {
+        selectedDrugId = filtered[0].id;
+      }
+
+      container.innerHTML = filtered.map(d => {
+        const isSelected = (d.id === selectedDrugId);
+        const isSyrup = hasSyrupForm(d);
+        const isTab = hasTabletForm(d);
+
+        return `
+          <div onclick="selectDrug('${d.id}')" class="p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${isSelected ? 'border-blue-600 bg-blue-50/70 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'}">
+            <div class="space-y-1 flex-1 pr-2">
+              <div class="flex items-center space-x-1.5 flex-wrap">
+                <span class="font-extrabold text-xs ${isSelected ? 'text-blue-900' : 'text-slate-800'}">${d.name}</span>
+                <div class="flex items-center space-x-1">
+                  ${isSyrup ? '<span class="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded border border-amber-200">시럽</span>' : ''}
+                  ${isTab ? '<span class="text-[9px] font-black bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded border border-blue-200">정제</span>' : ''}
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-500 line-clamp-1">
+                ${patientType === 'pediatric' ? (d.doseRange || '연령별 권장 용량') : (d.pearls || '')}
+              </p>
+            </div>
+            <div class="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white'}">
+              ${isSelected ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function selectDrug(id) {
+      selectedDrugId = id;
+      renderDrugCardList();
+    }
+
+    function adjustWeight(delta) {
+      const input = document.getElementById('input-weight');
+      let val = parseFloat(input.value) || 0;
+      val = Math.max(1, Math.min(100, val + delta));
+      input.value = val;
+    }
+
+    function adjustAge(delta) {
+      const input = document.getElementById('input-age');
+      let val = parseInt(input.value) || 0;
+      val = Math.max(0, Math.min(18, val + delta));
+      input.value = val;
+    }
+
+    function setRenalFilter(val, btn) {
+      adultRenalStatus = val;
+      document.querySelectorAll('.renal-btn').forEach(b => {
+        b.className = "renal-btn py-2 px-1.5 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700";
+      });
+      btn.className = "renal-btn py-2 px-1.5 text-center text-xs font-bold rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700";
+    }
+
+    function setHepaticFilter(val, btn) {
+      adultHepaticStatus = val;
+      document.querySelectorAll('.hepatic-btn').forEach(b => {
+        b.className = "hepatic-btn py-2 px-2 text-center text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700";
+      });
+      btn.className = "hepatic-btn py-2 px-2 text-center text-xs font-bold rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700";
+    }
+
+    // Step 3 처방 가이드 렌더링
+    function renderStep3Prescription() {
+      const allDrugs = (patientType === 'pediatric') ? PEDIATRIC_DRUGS : ADULT_DRUGS;
+      const drug = allDrugs.find(d => d.id === selectedDrugId) || allDrugs[0];
+      const container = document.getElementById('step3-content');
+      const linksContainer = document.getElementById('step3-external-links');
+
+      const q = encodeURIComponent(drug.searchKey);
+      linksContainer.innerHTML = `
+        <a href="https://terms.naver.com/search.naver?query=${q}" target="_blank" rel="noopener" class="text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-md flex items-center space-x-1 hover:bg-emerald-100">
+          <i data-lucide="book-open" class="w-3 h-3"></i>
+          <span>약학정보원 백과</span>
+        </a>
+        <a href="https://nedrug.mfds.go.kr/searchDrug?searchWord=${q}" target="_blank" rel="noopener" class="text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300 px-2.5 py-1 rounded-md flex items-center space-x-1 hover:bg-indigo-100">
+          <i data-lucide="shield-alert" class="w-3 h-3"></i>
+          <span>식약처 DUR</span>
+        </a>
+      `;
+
+      if (patientType === 'pediatric') {
+        const weight = parseFloat(document.getElementById('input-weight').value) || 12;
+        const age = parseFloat(document.getElementById('input-age').value) || 2;
+
+        if (drug.doseType === 'fixed_age') {
+          let matched = drug.rules.find(r => (r.minAge === undefined || age >= r.minAge) && (r.maxAge === undefined || age < r.maxAge));
+          if (!matched && age >= 12) matched = drug.rules[drug.rules.length - 1];
+
+          const isNoteOnly = !!matched.note;
+          const singleMl = matched.syrupMl || (drug.syrupConc ? (matched.dose / drug.syrupConc).toFixed(1) : null);
+          const singleTab = (drug.tabletStrength && matched.dose) ? (matched.dose / drug.tabletStrength).toFixed(2) : null;
+
+          lastGeneratedEmrText = `[소아 피부과] ${drug.name} | ${age}세(${weight}kg) | ${isNoteOnly ? matched.note : `${matched.dose}mg (${matched.freq})`} | ${singleMl ? `시럽: 1회 ${singleMl}mL` : `정제: 1회 약 ${singleTab}T`}`;
+
+          container.innerHTML = `
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 space-y-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="text-[10px] font-black tracking-wider uppercase text-blue-700 bg-blue-100 px-2 py-0.5 rounded">연령 기준 투여 약제</span>
+                  <h3 class="text-base font-black text-slate-900 mt-1">${drug.name}</h3>
+                </div>
+                <span class="text-xs font-bold text-slate-800 bg-white px-2 py-1 rounded-md border border-slate-200">${age}세 / ${weight}kg</span>
+              </div>
+
+              <div class="bg-white rounded-xl p-3 border border-slate-200 space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500 font-semibold">1일 권장 표준 용법</span>
+                  <span class="font-black text-blue-700 text-sm">${isNoteOnly ? matched.note : `${matched.dose} mg / ${matched.freq}`}</span>
+                </div>
+                ${!isNoteOnly && singleMl ? `
+                <div class="flex items-center justify-between text-xs border-t border-slate-100 pt-2">
+                  <span class="text-slate-500 font-semibold">시럽 제형 환산 (${drug.syrupConc}mg/mL)</span>
+                  <span class="font-extrabold text-emerald-700 text-sm">1회 ${singleMl} mL</span>
+                </div>` : ''}
+                ${!isNoteOnly && singleTab ? `
+                <div class="flex items-center justify-between text-xs border-t border-slate-100 pt-2">
+                  <span class="text-slate-500 font-semibold">정제 제형 환산 (${drug.tabletStrength}mg/T)</span>
+                  <span class="font-bold text-slate-700">1회 약 ${singleTab} T</span>
+                </div>` : ''}
+              </div>
+
+              <div class="text-[11px] text-slate-600 bg-white/80 p-3 rounded-xl border border-blue-100 space-y-1">
+                <span class="font-bold text-slate-800 flex items-center space-x-1">
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i>
+                  <span>처방 참고사항</span>
+                </span>
+                <p class="leading-relaxed">${drug.precautions}</p>
+              </div>
+            </div>
+          `;
+        } else {
+          const targetDose = drug.defaultDose;
+          const calculatedTotal = weight * targetDose;
+          const isCeiling = drug.maxDoseDay && (calculatedTotal > drug.maxDoseDay);
+          const finalDaily = isCeiling ? drug.maxDoseDay : calculatedTotal;
+          const divide = drug.divide || 3;
+          const singleMg = finalDaily / divide;
+          const syrupSingleMl = drug.syrupConc ? (singleMg / drug.syrupConc).toFixed(1) : null;
+          const tabSingleT = drug.tabletStrength ? (singleMg / drug.tabletStrength).toFixed(2) : null;
+
+          lastGeneratedEmrText = `[소아 피부과] ${drug.name} | ${weight}kg | 1일 ${finalDaily.toFixed(1)}mg (1회 ${singleMg.toFixed(1)}mg 1일 ${divide}회 po) | ${syrupSingleMl ? `시럽 1회 ${syrupSingleMl}mL` : `정제 1회 ${tabSingleT}T`}`;
+
+          // 선택된 필터에 따라 강조 스타일 변경
+          const isSyrupPrior = (currentFormFilter === 'syrup');
+          const isTabPrior = (currentFormFilter === 'tablet');
+
+          container.innerHTML = `
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 space-y-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="text-[10px] font-black tracking-wider uppercase text-blue-700 bg-blue-100 px-2 py-0.5 rounded">체중(kg) 기반 정밀 계산</span>
+                  <h3 class="text-base font-black text-slate-900 mt-1">${drug.name}</h3>
+                </div>
+                <span class="text-xs font-bold text-slate-800 bg-white px-2 py-1 rounded-md border border-slate-200">${weight} kg</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-white p-3 rounded-xl border border-slate-200">
+                  <span class="text-[11px] text-slate-500 font-bold block">1회 투여량 (1일 ${divide}회)</span>
+                  <div class="text-lg font-black text-blue-700 mt-0.5">
+                    ${singleMg.toFixed(1)} <span class="text-xs font-semibold">mg / 회</span>
+                  </div>
+                  <span class="text-[10px] text-slate-400">${24 / divide}시간 간격 투여</span>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200">
+                  <span class="text-[11px] text-slate-500 font-bold block">1일 총 투여량</span>
+                  <div class="text-lg font-black ${isCeiling ? 'text-amber-600' : 'text-slate-800'} mt-0.5">
+                    ${finalDaily.toFixed(1)} <span class="text-xs font-semibold">mg / 일</span>
+                  </div>
+                  ${isCeiling ? '<span class="text-[10px] text-amber-600 font-bold">1일 상한 도달</span>' : `<span class="text-[10px] text-slate-400">기준: ${targetDose} mg/kg/일</span>`}
+                </div>
+              </div>
+
+              <!-- 제형별 조제 환산 카드 (선택 제형 하이라이트) -->
+              <div class="bg-white rounded-xl p-3 border-2 border-emerald-200 bg-emerald-50/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-emerald-900 flex items-center space-x-1">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>원내 제형별 조제 환산</span>
+                  </span>
+                  ${currentFormFilter !== 'all' ? `<span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${currentFormFilter === 'syrup' ? '시럽제 우선' : '정제 우선'}</span>` : ''}
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
+                  ${syrupSingleMl ? `
+                  <div class="p-2.5 rounded-lg border shadow-xs ${isSyrupPrior ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-400/30' : 'bg-white border-emerald-200'}">
+                    <span class="text-[10px] text-slate-500 font-bold block">시럽 제형 (${drug.syrupConc}mg/mL)</span>
+                    <span class="text-base font-black text-emerald-700 mt-0.5 block">1회 ${syrupSingleMl} mL</span>
+                    <span class="text-[10px] text-slate-400">1일 총 ${(syrupSingleMl * divide).toFixed(1)} mL</span>
+                  </div>` : '<div class="text-slate-400 text-[11px] p-2 bg-slate-50 rounded-lg flex items-center justify-center">시럽 제형 없음</div>'}
+
+                  ${tabSingleT ? `
+                  <div class="p-2.5 rounded-lg border ${isTabPrior ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-400/30' : 'bg-white border-slate-200'}">
+                    <span class="text-[10px] text-slate-500 font-bold block">정제 제형 (${drug.tabletStrength}mg/T)</span>
+                    <span class="text-base font-black text-slate-800 mt-0.5 block">1회 약 ${tabSingleT} T</span>
+                    <span class="text-[10px] text-slate-400">분할 투여 확인</span>
+                  </div>` : '<div class="text-slate-400 text-[11px] p-2 bg-slate-50 rounded-lg flex items-center justify-center">정제 제형 없음</div>'}
+                </div>
+              </div>
+
+              <div class="text-[11px] text-slate-600 bg-white/80 p-3 rounded-xl border border-blue-100 space-y-1">
+                <span class="font-bold text-slate-800 flex items-center space-x-1">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-amber-500"></i>
+                  <span>처방 주의사항</span>
+                </span>
+                <p class="leading-relaxed font-medium">${drug.doseRange} &middot; ${drug.precautions}</p>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        const renalText = drug.renalGuide[adultRenalStatus] || "조절 불필요";
+        const hepaticText = drug.hepaticGuide[adultHepaticStatus] || "조절 불필요";
+        const isContraindicated = renalText.includes("금기") || hepaticText.includes("금기");
+
+        lastGeneratedEmrText = `[성인 장기기능] ${drug.name} | 신기능(${adultRenalStatus}): ${renalText} | 간기능(${adultHepaticStatus}): ${hepaticText}`;
+
+        container.innerHTML = `
+          <div class="border-2 ${isContraindicated ? 'border-red-300 bg-red-50/40' : 'border-blue-200 bg-gradient-to-br from-slate-50 to-blue-50'} rounded-2xl p-4 space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-[10px] font-black tracking-wider uppercase ${isContraindicated ? 'text-red-700 bg-red-100' : 'text-blue-700 bg-blue-100'} px-2 py-0.5 rounded">장기기능 감량 지침</span>
+                <h3 class="text-base font-black text-slate-900 mt-1">${drug.name}</h3>
+              </div>
+              ${isContraindicated ? '<span class="text-xs font-black bg-red-600 text-white px-2.5 py-1 rounded-full shadow-xs">투여 금기</span>' : '<span class="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">용량 조정</span>'}
+            </div>
+
+            <div class="space-y-2">
+              <div class="bg-white p-3.5 rounded-xl border ${renalText.includes('금기') ? 'border-red-300 bg-red-50/50' : 'border-slate-200'}">
+                <span class="text-[11px] font-bold text-slate-500 block mb-1">신기능 맞춤 용법 (eGFR: ${adultRenalStatus})</span>
+                <p class="text-sm font-black ${renalText.includes('금기') ? 'text-red-700' : 'text-blue-900'}">${renalText}</p>
+              </div>
+
+              <div class="bg-white p-3.5 rounded-xl border ${hepaticText.includes('금기') ? 'border-red-300 bg-red-50/50' : 'border-slate-200'}">
+                <span class="text-[11px] font-bold text-slate-500 block mb-1">간기능 맞춤 용법 (Child-Pugh: ${adultHepaticStatus})</span>
+                <p class="text-sm font-black ${hepaticText.includes('금기') ? 'text-red-700' : 'text-slate-800'}">${hepaticText}</p>
+              </div>
+            </div>
+
+            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+              <span class="text-[11px] font-bold text-slate-700 flex items-center space-x-1">
+                <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-blue-600"></i>
+                <span>Clinical Pearls</span>
+              </span>
+              <p class="text-xs font-semibold text-slate-700 leading-relaxed">${drug.pearls || '특이사항 없음'}</p>
+            </div>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function copyEmrText() {
+      navigator.clipboard.writeText(lastGeneratedEmrText).then(() => {
+        showToast("EMR 차팅 문구가 복사되었습니다.");
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none');
+      }, 2000);
+    }
+
+    function openExternalSearchModal() {
+      document.getElementById('external-search-modal').classList.remove('hidden');
+      document.getElementById('ext-search-query').value = searchQuery || '두드리진';
+      lucide.createIcons();
+    }
+
+    function closeExternalSearchModal() {
+      document.getElementById('external-search-modal').classList.add('hidden');
+    }
+
+    function executeExternalSearch(target) {
+      const q = encodeURIComponent(document.getElementById('ext-search-query').value.trim());
+      if (!q) return;
+      if (target === 'kpic') {
+        window.open(`https://terms.naver.com/search.naver?query=${q}`, '_blank');
+      } else {
+        window.open(`https://nedrug.mfds.go.kr/searchDrug?searchWord=${q}`, '_blank');
+      }
+      closeExternalSearchModal();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      goToStep(1);
+    });
+  </script>
+</body>
+</html>
